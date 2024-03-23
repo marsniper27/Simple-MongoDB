@@ -96,7 +96,12 @@ async function incrementFields(dbType, collection, userId, fieldsToUpdate) {
     );
 }
 
-async function findDocument(dbType, collection, userId, fieldsToUpdate) {
+async function findDocument(dbType, collection,id) {
+    const db = await connectDB(dbType);
+    const result = await db.collection(collection).find(id).toArray();
+    return result;
+}
+async function findDocuments(dbType, collection) {
     const db = await connectDB(dbType);
     const result = await db.collection(collection).find({}).toArray();
     return result;
@@ -108,4 +113,4 @@ process.on('SIGINT', async () => {
 });
 
 // Export the functions for use in other files
-module.exports = { saveWallet: saveEntry, saveEntry, findOneWalletByID: findEntryByID, findEntryByID,saveKey, findKeyByID, removeEntry, incrementFields, findDocument };
+module.exports = { saveWallet: saveEntry, saveEntry, findOneWalletByID: findEntryByID, findEntryByID,saveKey, findKeyByID, removeEntry, incrementFields, findDocument ,findDocuments };
