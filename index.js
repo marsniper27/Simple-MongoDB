@@ -106,6 +106,19 @@ async function findDocuments(dbType, collection) {
     const result = await db.collection(collection).find({}).toArray();
     return result;
 }
+// Function to update a document in the collection
+async function updateDocument(dbType, collectionName, query, update) {
+    const db = await connectDB(dbType);
+    const collection = db.collection(collectionName);
+
+    try {
+        const result = await collection.updateOne(query, { $set: update });
+        return result.modifiedCount > 0;
+    } catch (error) {
+        console.error('Error updating document:', error);
+        return false;
+    }
+}
 
 process.on('SIGINT', async () => {
     await client.close();
@@ -113,4 +126,4 @@ process.on('SIGINT', async () => {
 });
 
 // Export the functions for use in other files
-module.exports = { saveWallet: saveEntry, saveEntry, findOneWalletByID: findEntryByID, findEntryByID,saveKey, findKeyByID, removeEntry, incrementFields, findDocument ,findDocuments };
+module.exports = { saveWallet: saveEntry, saveEntry, findOneWalletByID: findEntryByID, findEntryByID,saveKey, findKeyByID, removeEntry, incrementFields, findDocument ,findDocuments, updateDocument };
