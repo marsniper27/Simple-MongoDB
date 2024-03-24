@@ -1,6 +1,6 @@
 {
   "name": "mars-simple-mongodb",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "a simply MongoDB interface to work with our libraries.",
   "main": "index.js",
   "scripts": {
