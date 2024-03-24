@@ -120,10 +120,27 @@ async function updateDocument(dbType, collectionName, query, update) {
     }
 }
 
+// Function to add an item to an array field in a document
+async function addItemToArray(dbType,collectionName, documentId, arrayField, newItem) {
+    const db = await connectDB(dbType);
+    const collection = db.collection(collectionName);
+
+    try {
+        const result = await collection.updateOne(
+            { _id: documentId },
+            { $push: { [arrayField]: newItem } }
+        );
+        return result.modifiedCount > 0;
+    } catch (error) {
+        console.error('Error adding item to array:', error);
+        return false;
+    }
+}
+
 process.on('SIGINT', async () => {
     await client.close();
     process.exit();
 });
 
 // Export the functions for use in other files
-module.exports = { saveWallet: saveEntry, saveEntry, findOneWalletByID: findEntryByID, findEntryByID,saveKey, findKeyByID, removeEntry, incrementFields, findDocument ,findDocuments, updateDocument };
+module.exports = { saveWallet: saveEntry, saveEntry, findOneWalletByID: findEntryByID, findEntryByID,saveKey, findKeyByID, removeEntry, incrementFields, findDocument ,findDocuments, updateDocument,addItemToArray };
