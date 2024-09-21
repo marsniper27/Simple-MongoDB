@@ -1,26 +1,38 @@
 //index.js
 require('dotenv').config();
-const { MongoClient} = require('mongodb');
+const { MongoClient } = require('mongodb');
 
 // Construct the MongoDB URI using environment variables
-const dbUri = process.env.MONGO_DB_ADDRESS;
-const uri = dbUri.replace("<password>", process.env.MONGO_PASSWORD);
+let uri;
 let client = null;
 
+if (process.env.MONGO_TYPE == "ATLAS") {
+    const dbUri = process.env.MONGO_DB_ADDRESS;
+    uri = dbUri.replace("<db_username>", process.env.MONGO_USER);
+    uri = uri.replace("<password>", process.env.MONGO_PASSWORD);
+}
+else {
+    uri = `mongodb://127.0.0.1:${process.env.MONGO_DB_PORT || "27017"}`;
+
+}
 // Map to hold the instances of different databases
 let dbInstances = new Map();
 
 
 // Initialize the MongoDB client
-if (process.env.SKIP_DB_INIT !== 'true') {
-    client = new MongoClient(uri);
+// if (process.env.SKIP_DB_INIT !== 'true') {
+//     client = new MongoClient(uri);
 
-}
+// }
 
 // Connect to MongoDB and return the requested database instance
 // dbType should be either "wallet" for the wallet database
 // or the Discord server ID for server-specific databases
 async function connectDB(dbType) {
+    if (!client) {
+        client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    }
+
     if (!dbInstances.has(dbType)) {
         await client.connect();
         const dbInstance = client.db(dbType);
@@ -31,26 +43,30 @@ async function connectDB(dbType) {
 
 
 // Save a entry in the database
-async function saveEntry(dbType, collection,entry) {
-    const db = await connectDB(dbType);
-    const result = await db.collection(collection).insertOne(entry);
-    if(dbType === 'wallets'){
-        console.log(`New Wallet created for ${entry.user} with public key ${entry.publicKey}`);
+async function saveEntry(dbType, collection, entry) {
+    try {
+        const db = await connectDB(dbType);
+        const result = await db.collection(collection).insertOne(entry);
+        if (dbType === 'wallets') {
+            console.log(`New Wallet created for ${entry.user} with public key ${entry.publicKey}`);
+        }
+    } catch (error) {
+        console.error("Error saving entry:", error);
     }
 }
 
 // Find a wallet by ID
-async function findEntryByID(dbType, collection,id) {
+async function findEntryByID(dbType, collection, id) {
     const db = await connectDB(dbType);
     const result = await db.collection(collection).findOne({ _id: id });
 
     if (result) {
-        if(dbType === 'wallets'){
+        if (dbType === 'wallets') {
             console.log(`Found a wallet in the collection for user with the id '${id}':`);
         }
         return result;
     } else {
-        if(dbType === 'wallets'){
+        if (dbType === 'wallets') {
             console.log(`No wallet found for user with the id '${id}'`);
         }
         return false;
@@ -82,7 +98,7 @@ async function removeEntry(dbType, collection, id) {
     const db = await connectDB(dbType);
     await db.collection(collection).deleteOne({ _id: id });
     // Optionally, log the removal for debugging or auditing purposes
-    if(dbType === 'wallets'){
+    if (dbType === 'wallets') {
         console.log(`Entry for ${id} removed from the ${collection} collection.`);
     }
 }
@@ -91,7 +107,7 @@ async function removeEntry(dbType, collection, id) {
 async function incrementFields(dbType, collection, userId, fieldsToUpdate) {
     const db = await connectDB(dbType);
     await db.collection(collection).updateOne(
-        { _id: userId }, 
+        { _id: userId },
         { $inc: fieldsToUpdate }
     );
 }
@@ -116,7 +132,7 @@ async function updateDocument(dbType, collectionName, query, update) {
 }
 
 // Function to add an item to an array field in a document
-async function addItemToArray(dbType,collectionName, documentId, arrayField, newItem) {
+async function addItemToArray(dbType, collectionName, documentId, arrayField, newItem) {
     const db = await connectDB(dbType);
     const collection = db.collection(collectionName);
 
@@ -138,4 +154,4 @@ process.on('SIGINT', async () => {
 });
 
 // Export the functions for use in other files
-module.exports = { saveWallet: saveEntry, saveEntry, findOneWalletByID: findEntryByID, findEntryByID,saveKey, findKeyByID, removeEntry, incrementFields ,findDocuments, updateDocument,addItemToArray };
+module.exports = { saveWallet: saveEntry, saveEntry, findOneWalletByID: findEntryByID, findEntryByID, saveKey, findKeyByID, removeEntry, incrementFields, findDocuments, updateDocument, addItemToArray };
